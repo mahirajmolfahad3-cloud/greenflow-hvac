@@ -66,8 +66,8 @@ export async function loginWithDemoAction(): Promise<ActionResult> {
     return { error: createError?.message ?? "Failed to create demo account." };
   }
 
-  // Create profile row.
-  const { error: profileError } = await supabase.from("gf_profiles").insert({
+  // Create profile row using admin client to bypass RLS (no session exists yet).
+  const { error: profileError } = await admin.from("gf_profiles").insert({
     id: newUser.user.id,
     full_name: DEMO_NAME,
     email: DEMO_EMAIL,
@@ -81,8 +81,8 @@ export async function loginWithDemoAction(): Promise<ActionResult> {
     return { error: profileError.message };
   }
 
-  // Register as demo user in settings.
-  await supabase.from("gf_demo_settings").insert({
+  // Register as demo user in settings using admin client.
+  await admin.from("gf_demo_settings").insert({
     demo_user_id: newUser.user.id,
   });
 

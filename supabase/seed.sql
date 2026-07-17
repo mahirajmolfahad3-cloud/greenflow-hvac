@@ -4,6 +4,18 @@
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
+-- Auth users — insert into auth.users so gf_profiles FK constraint is satisfied
+-- Passwords below are for local dev only. Change before deploying to prod.
+-- ---------------------------------------------------------------------------
+insert into auth.users (id, email, encrypted_password, email_confirmed_at, confirmation_sent_at, raw_user_meta_data, aud, role, instance_id) values
+  ('00000000-0000-0000-0000-000000000010', 'mike@greenflowhvac.com',   crypt('password123', gen_salt('bf')), now(), now(), '{"full_name":"Mike Torres"}',   'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
+  ('00000000-0000-0000-0000-000000000011', 'alicia@greenflowhvac.com', crypt('password123', gen_salt('bf')), now(), now(), '{"full_name":"Alicia Chen"}',   'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
+  ('00000000-0000-0000-0000-000000000012', 'dana@greenflowhvac.com',   crypt('password123', gen_salt('bf')), now(), now(), '{"full_name":"Dana Walsh"}',     'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
+  ('00000000-0000-0000-0000-000000000013', 'priya@greenflowhvac.com',  crypt('password123', gen_salt('bf')), now(), now(), '{"full_name":"Priya Sharma"}',   'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
+  ('00000000-0000-0000-0000-000000000014', 'demo@greenflowhvac.com',   crypt('Demo12345678', gen_salt('bf')), now(), now(), '{"full_name":"Demo User"}',      'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000')
+on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
 -- Roles
 -- ---------------------------------------------------------------------------
 insert into gf_roles (name, description) values
@@ -15,17 +27,22 @@ insert into gf_roles (name, description) values
 on conflict (name) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Demo user (created via Supabase Auth, then profile inserted here)
--- The demo user UUID must match what's created in auth.users.
--- For local dev, create the demo user first via:
---   supabase auth create-user --email demo@greenflowhvac.com --password Demo12345678
--- Then update the UUID below to match.
+-- Profiles — one row per auth user
 -- ---------------------------------------------------------------------------
--- insert into gf_profiles (id, full_name, email, role, status, phone) values
---   ('00000000-0000-0000-0000-000000000001', 'Demo User', 'demo@greenflowhvac.com', 'demo', 'active', '+1 (555) 999-9999');
---
--- insert into gf_demo_settings (demo_user_id) values
---   ('00000000-0000-0000-0000-000000000001');
+insert into gf_profiles (id, full_name, email, role, status, phone) values
+  ('00000000-0000-0000-0000-000000000010', 'Mike Torres',   'mike@greenflowhvac.com',   'technician',  'active', '+1 (555) 100-1001'),
+  ('00000000-0000-0000-0000-000000000011', 'Alicia Chen',   'alicia@greenflowhvac.com', 'technician',  'active', '+1 (555) 100-1002'),
+  ('00000000-0000-0000-0000-000000000012', 'Dana Walsh',    'dana@greenflowhvac.com',   'dispatcher',  'active', '+1 (555) 100-1003'),
+  ('00000000-0000-0000-0000-000000000013', 'Priya Sharma',  'priya@greenflowhvac.com',  'admin',       'active', '+1 (555) 100-1004'),
+  ('00000000-0000-0000-0000-000000000014', 'Demo User',     'demo@greenflowhvac.com',   'demo',        'active', '+1 (555) 999-9999')
+on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Demo settings — marks the demo user for read-only enforcement
+-- ---------------------------------------------------------------------------
+insert into gf_demo_settings (demo_user_id) values
+  ('00000000-0000-0000-0000-000000000014')
+on conflict (demo_user_id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Suppliers
@@ -47,6 +64,19 @@ insert into gf_inventory_items (name, sku, supplier_id, quantity_on_hand, reorde
   ('Condenser Fan Motor', 'CFM-1/4HP', '11111111-1111-1111-1111-111111111101', 4, 3, 8500),
   ('Contact Relay 24V', 'REL-24V', '11111111-1111-1111-1111-111111111102', 18, 8, 1200),
   ('Duct Tape (50yd)', 'TAPE-DUCT', '11111111-1111-1111-1111-111111111103', 25, 10, 600);
+
+-- ---------------------------------------------------------------------------
+-- Inventory Transactions — explain the initial on-hand quantities
+-- ---------------------------------------------------------------------------
+insert into gf_inventory_transactions (inventory_item_id, quantity_delta, reason, created_by) values
+  ((select id from gf_inventory_items where sku = 'REF-410A-25'),   6,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com')),
+  ((select id from gf_inventory_items where sku = 'CAP-45-5'),     22,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com')),
+  ((select id from gf_inventory_items where sku = 'FLT-20251'),     3,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com')),
+  ((select id from gf_inventory_items where sku = 'FLT-16251'),     8,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com')),
+  ((select id from gf_inventory_items where sku = 'TSTAT-PRO'),    15,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com')),
+  ((select id from gf_inventory_items where sku = 'CFM-1/4HP'),     4,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com')),
+  ((select id from gf_inventory_items where sku = 'REL-24V'),      18,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com')),
+  ((select id from gf_inventory_items where sku = 'TAPE-DUCT'),    25,  'Initial stock',  (select id from gf_profiles where email = 'priya@greenflowhvac.com'));
 
 -- ---------------------------------------------------------------------------
 -- Customers
@@ -148,17 +178,16 @@ insert into gf_estimate_items (estimate_id, description, quantity, unit_price_ce
 -- ---------------------------------------------------------------------------
 -- Invoices
 -- ---------------------------------------------------------------------------
-insert into gf_invoices (id, customer_id, job_id, estimate_id, status, due_date, created_at) values
-  ('66666666-6666-6666-6666-666666666601', '22222222-2222-2222-2222-222222222206', '44444444-4444-4444-4444-444444444406', '55555555-5555-5555-5555-555555555502', 'paid', '2026-08-01', '2026-07-11 10:00:00+00'),
-  ('66666666-6666-6666-6666-666666666602', '22222222-2222-2222-2222-222222222202', '44444444-4444-4444-4444-444444444402', '55555555-5555-5555-5555-555555555501', 'sent', '2026-08-15', '2026-07-17 09:00:00+00'),
-  ('66666666-6666-6666-6666-666666666603', '22222222-2222-2222-2222-222222222201', null, null, 'overdue', '2026-07-01', '2026-06-01 08:00:00+00'),
-  ('66666666-6666-6666-6666-666666666604', '22222222-2222-2222-2222-222222222203', null, null, 'draft', '2026-08-20', '2026-07-15 12:00:00+00');
+insert into gf_invoices (id, customer_id, job_id, estimate_id, status, due_date, discount_cents, tax_rate, created_at) values
+  ('66666666-6666-6666-6666-666666666601', '22222222-2222-2222-2222-222222222206', '44444444-4444-4444-4444-444444444406', '55555555-5555-5555-5555-555555555502', 'paid', '2026-08-01', 50000, 0, '2026-07-11 10:00:00+00'),
+  ('66666666-6666-6666-6666-666666666602', '22222222-2222-2222-2222-222222222202', '44444444-4444-4444-4444-444444444402', '55555555-5555-5555-5555-555555555501', 'sent', '2026-08-15', 0, 0.0825, '2026-07-17 09:00:00+00'),
+  ('66666666-6666-6666-6666-666666666603', '22222222-2222-2222-2222-222222222201', null, null, 'overdue', '2026-07-01', 0, 0, '2026-06-01 08:00:00+00'),
+  ('66666666-6666-6666-6666-666666666604', '22222222-2222-2222-2222-222222222203', null, null, 'draft', '2026-08-20', 0, 0, '2026-07-15 12:00:00+00');
 
 insert into gf_invoice_items (invoice_id, description, quantity, unit_price_cents, sort_order) values
   ('66666666-6666-6666-6666-666666666601', 'Lennox ML14XC1 split system', 1, 320000, 1),
   ('66666666-6666-6666-6666-666666666601', 'Labor - full installation', 1, 150000, 2),
   ('66666666-6666-6666-6666-666666666601', 'Disposal of old unit', 1, 25000, 3),
-  ('66666666-6666-6666-6666-666666666601', 'Discount', -1, 50000, 4),
   ('66666666-6666-6666-6666-666666666602', 'R-410A Refrigerant (per lb)', 2, 7500, 1),
   ('66666666-6666-6666-6666-666666666602', 'Labor - AC diagnostic & repair (per hour)', 2, 9500, 2),
   ('66666666-6666-6666-6666-666666666602', 'System performance test', 1, 5000, 3),
@@ -199,4 +228,5 @@ insert into gf_settings (key, value) values
   ('company_address', '"123 Business Park Drive, Springfield, IL 62701"'),
   ('company_phone', '"+1 (555) 000-0000"'),
   ('company_email', '"info@greenflowhvac.com"'),
-  ('default_tax_rate', '0.0825'),
+  ('default_tax_rate', '0.0825')
+on conflict (key) do nothing;
