@@ -200,4 +200,3 @@ insert into gf_settings (key, value) values
   ('company_phone', '"+1 (555) 000-0000"'),
   ('company_email', '"info@greenflowhvac.com"'),
   ('default_tax_rate', '0.0825'),
-  ('business_hours', '{"monday": "8:00-17:00", "tuesday": "8:00-17:00", "wednesday": "8:00-17:00", "thursday": "8:00-17:00", "friday": "8:00-17:00", "saturday": "9:00-12:00", "sunday": "closed"}');

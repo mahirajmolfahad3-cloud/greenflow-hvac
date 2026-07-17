@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { inviteEmployeeSchema } from "@/features/auth/validators";
 import { revalidatePath } from "next/cache";
 
@@ -36,8 +36,9 @@ export async function inviteEmployeeAction(_: EmployeeActionResult, formData: Fo
 
   if (existing) return { error: "An account with this email already exists." };
 
-  // 3. Create the auth user via Supabase Admin API
-  const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+  // 3. Create the auth user via Supabase Admin API (requires service_role key)
+  const admin = createAdminClient();
+  const { data: newUser, error: createError } = await admin.auth.admin.createUser({
     email: parsed.data.email,
     email_confirm: true,
     password: crypto.randomUUID(),
@@ -61,12 +62,12 @@ export async function inviteEmployeeAction(_: EmployeeActionResult, formData: Fo
   });
 
   if (profileError) {
-    await supabase.auth.admin.deleteUser(newUser.user.id);
+    await admin.auth.admin.deleteUser(newUser.user.id);
     return { error: profileError.message };
   }
 
   // 5. Send the invitation email
-  const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(parsed.data.email, {
+  const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/accept-invite`,
   });
 
@@ -105,12 +106,14 @@ export async function updateEmployeeStatusAction(_: EmployeeActionResult, formDa
 
   // If archiving, also disable the auth user
   if (newStatus === "archived") {
-    await supabase.auth.admin.updateUserById(employeeId, { ban_duration: "0" });
+    const admin = createAdminClient();
+    await admin.auth.admin.updateUserById(employeeId, { ban_duration: "0" });
   }
 
   // If reactivating, unban the user
   if (newStatus === "active") {
-    await supabase.auth.admin.updateUserById(employeeId, { ban_duration: "none" });
+    const admin = createAdminClient();
+    await admin.auth.admin.updateUserById(employeeId, { ban_duration: "none" });
   }
 
   revalidatePath("/employees");
@@ -123,7 +126,8 @@ export async function resendInviteAction(_: EmployeeActionResult, formData: Form
 
   const supabase = createClient();
 
-  const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+  const admin = createAdminClient();
+  const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/accept-invite`,
   });
 

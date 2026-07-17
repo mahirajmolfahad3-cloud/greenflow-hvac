@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 
 export default function LoginPage() {
   const [state, formAction] = useFormState(loginAction, {});
+  const [demoState, demoFormAction] = useFormState(loginWithDemoAction, {});
 
   return (
     <Card>
@@ -31,8 +32,9 @@ export default function LoginPage() {
           Continue with Google
         </Button>
       </form>
+      {demoState?.error && <p className="mt-2 text-sm text-red-600">{demoState.error}</p>}
       <div className="mt-4 flex justify-between text-sm">
-        <form action={loginWithDemoAction}>
+        <form action={demoFormAction}>
           <button type="submit" className="text-primary underline hover:text-primary/80">
             Try Demo
           </button>
