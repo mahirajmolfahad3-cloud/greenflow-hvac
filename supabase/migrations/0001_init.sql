@@ -4,7 +4,7 @@
 -- updated_at, and appropriate FKs/indexes/constraints.
 -- ============================================================================
 
-create extension if not exists "pgcrypto";
+create extension if not exists "pgcrypto" with schema extensions;
 
 -- Generic trigger to keep updated_at current on every UPDATE.
 create or replace function gf_set_updated_at()

@@ -1,19 +1,10 @@
 -- ============================================================================
--- GreenFlow HVAC — Seed data for local development
--- Run with: supabase db reset (applies migrations then this file)
+-- GreenFlow HVAC — Remote seed (safe for hosted Supabase)
+-- Run with: supabase db query --linked -f supabase/seed-remote.sql
+-- NOTE: Auth users are created via the Admin Auth API, NOT here.
+-- This script only inserts profiles (matching real auth user IDs) and
+-- business data using subselects so all FKs resolve correctly.
 -- ============================================================================
-
--- ---------------------------------------------------------------------------
--- Auth users — insert into auth.users so gf_profiles FK constraint is satisfied
--- Passwords below are for local dev only. Change before deploying to prod.
--- ---------------------------------------------------------------------------
-insert into auth.users (id, email, encrypted_password, email_confirmed_at, confirmation_sent_at, raw_user_meta_data, aud, role, instance_id) values
-  ('00000000-0000-0000-0000-000000000010', 'mike@greenflowhvac.com',   extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), '{"full_name":"Mike Torres"}',   'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
-  ('00000000-0000-0000-0000-000000000011', 'alicia@greenflowhvac.com', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), '{"full_name":"Alicia Chen"}',   'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
-  ('00000000-0000-0000-0000-000000000012', 'dana@greenflowhvac.com',   extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), '{"full_name":"Dana Walsh"}',     'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
-  ('00000000-0000-0000-0000-000000000013', 'priya@greenflowhvac.com',  extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), '{"full_name":"Priya Sharma"}',   'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000'),
-  ('00000000-0000-0000-0000-000000000014', 'demo@greenflowhvac.com',   extensions.crypt('Demo12345678', extensions.gen_salt('bf')), now(), now(), '{"full_name":"Demo User"}',      'authenticated', 'authenticated', '00000000-0000-0000-0000-000000000000')
-on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Roles
@@ -27,21 +18,21 @@ insert into gf_roles (name, description) values
 on conflict (name) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Profiles — one row per auth user
+-- Profiles — one row per auth user (IDs come from auth.users created via API)
 -- ---------------------------------------------------------------------------
 insert into gf_profiles (id, full_name, email, role, status, phone) values
-  ('00000000-0000-0000-0000-000000000010', 'Mike Torres',   'mike@greenflowhvac.com',   'technician',  'active', '+1 (555) 100-1001'),
-  ('00000000-0000-0000-0000-000000000011', 'Alicia Chen',   'alicia@greenflowhvac.com', 'technician',  'active', '+1 (555) 100-1002'),
-  ('00000000-0000-0000-0000-000000000012', 'Dana Walsh',    'dana@greenflowhvac.com',   'dispatcher',  'active', '+1 (555) 100-1003'),
-  ('00000000-0000-0000-0000-000000000013', 'Priya Sharma',  'priya@greenflowhvac.com',  'admin',       'active', '+1 (555) 100-1004'),
-  ('00000000-0000-0000-0000-000000000014', 'Demo User',     'demo@greenflowhvac.com',   'demo',        'active', '+1 (555) 999-9999')
+  ((select id from auth.users where email = 'mike@greenflowhvac.com' limit 1),  'Mike Torres',   'mike@greenflowhvac.com',   'technician',  'active', '+1 (555) 100-1001'),
+  ((select id from auth.users where email = 'alicia@greenflowhvac.com' limit 1), 'Alicia Chen',   'alicia@greenflowhvac.com', 'technician',  'active', '+1 (555) 100-1002'),
+  ((select id from auth.users where email = 'dana@greenflowhvac.com' limit 1),  'Dana Walsh',    'dana@greenflowhvac.com',   'dispatcher',  'active', '+1 (555) 100-1003'),
+  ((select id from auth.users where email = 'priya@greenflowhvac.com' limit 1), 'Priya Sharma',  'priya@greenflowhvac.com',  'admin',       'active', '+1 (555) 100-1004'),
+  ((select id from auth.users where email = 'demo@greenflowhvac.com' limit 1),  'Demo User',     'demo@greenflowhvac.com',   'demo',        'active', '+1 (555) 999-9999')
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Demo settings — marks the demo user for read-only enforcement
 -- ---------------------------------------------------------------------------
 insert into gf_demo_settings (demo_user_id) values
-  ('00000000-0000-0000-0000-000000000014')
+  ((select id from auth.users where email = 'demo@greenflowhvac.com' limit 1))
 on conflict (demo_user_id) do nothing;
 
 -- ---------------------------------------------------------------------------
