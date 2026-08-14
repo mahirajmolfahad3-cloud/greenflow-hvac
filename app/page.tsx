@@ -9,6 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { LandingNav } from "@/components/layout/landing-nav";
+import { loginWithDemoAction } from "@/features/auth/actions";
 
 // Root renders landing content directly to avoid Next.js SSG/runtime issues
 // caused by wrapper indirection through route groups.
@@ -138,13 +139,15 @@ export default function RootPage() {
             Click &ldquo;Try Demo&rdquo; on the login page to explore GreenFlow HVAC with sample data—no sign-up required.
           </p>
           <div className="mt-8">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-            >
-              Try Demo
-              <ArrowRight className="h-5 w-5" />
-            </Link>
+            <form action={loginWithDemoAction}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              >
+                Try Demo
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </form>
           </div>
         </div>
       </main>
